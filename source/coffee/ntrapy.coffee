@@ -241,15 +241,16 @@ ntrapy.parseNodes = (data, keyed={}) ->
     nid = node.id
     if keyed[nid]? # Updating existing node?
       pid = keyed[nid].facts?.parent_id # Grab current parent
-      if pid? and pid isnt node.facts?.parent_id # If new parent is different
+      npid = node.facts.parent_id
+      dpid = $("[data-id='#{nid}']").closest(".drop-target").attr("data-id") # Grab DOM parent
+      if node.task_id # Executing task?
+        console.log "Pending: #{node.task_id}: old #{pid} -> new #{npid} -> dom #{dpid}"
+        node.facts.parent_id = dpid # Stay in DOM parent
+      else if pid? and pid isnt npid # If new parent is different
         ntrapy.killPopovers() # We're moving so kill popovers
         keyed[nid].hovered = false # And cancel hovers
-        if node.task_id?
-          #console.log "Pending: #{node.task_id}: #{keyed[nid].facts.parent_id} -> #{node.facts.parent_id}"
-          node.facts.parent_id = keyed[nid].facts.parent_id # Ignore parent changes until tasks complete
-        else
-          console.log "Deleting: #{node.task_id}: #{keyed[nid].facts.parent_id} -> #{node.facts.parent_id}"
-          delete keyed[pid].children[nid] # Remove node from old parent's children
+        console.log "Deleting: #{node.task_id}: old #{pid} -> new #{npid} -> dom #{dpid}"
+        delete keyed[pid].children[nid] # Remove node from old parent's children
 
     # Stub if missing
     node.actions ?= []
@@ -260,6 +261,7 @@ ntrapy.parseNodes = (data, keyed={}) ->
     node.facts ?= {}
     node.facts.backends ?= []
     node.hovered ?= keyed[nid]?.hovered ? false
+    console.log "Updating #{nid}: old #{keyed[nid]?.facts?.parent_id} -> #{node.facts.parent_id}"
     keyed[nid] = node # Add/update node
 
   # Build child arrays
